@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  jobApplications    JobApplication[]
+  baseResumes        BaseResume[]
+  generatedResumes   GeneratedResume[]
+
+  @@map("users")
+}
+
+model JobApplication {
+  id              String   @id @default(cuid())
+  userId          String
+  companyName     String
+  jobTitle        String
+  applicationDate DateTime
+  status          String   @default("OPENING")
+  location        String?
+  jobPostingLink  String?
+  salary          String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedResumes GeneratedResume[]
+
+  @@map("job_applications")
+}
+
+model BaseResume {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedResumes  GeneratedResume[]
+
+  @@map("base_resumes")
+}
+
+model GeneratedResume {
+  id                 String   @id @default(cuid())
+  userId             String
+  jobApplicationId   String
+  baseResumeId       String
+  content            String
+  jobTitle           String
+  companyName        String
+  customizations     String?  // AI-generated customizations notes
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplication   JobApplication   @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+  baseResume       BaseResume       @relation(fields: [baseResumeId], references: [id], onDelete: Cascade)
+
+  @@map("generated_resumes")
+}
+
+// Application Status Values (for reference)
+// OPENING, APPLIED, INTERVIEW_SCHEDULED, INTERVIEWING, OFFER, REJECTED
